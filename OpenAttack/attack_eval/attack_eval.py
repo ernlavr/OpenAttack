@@ -182,6 +182,8 @@ class AttackEval:
         flips["1"] = []
         flips["2"] = []
         samples = []
+        preds = []
+        gt = []
 
         # Begin for
         for i, res in enumerate(result_iterator):
@@ -242,9 +244,15 @@ class AttackEval:
                     toLabel = np.argmax(y_adv)
                     flips[str(fromLabel)].append(toLabel)
                     samples.append((fromLabel, toLabel, x_orig, x_adv))
+
+                    gt.append(fromLabel)
+                    preds.append(toLabel)
+
                 else:
                     val = np.argmax(y_orig)
                     flips["ok"].append(val)
+                    gt.append(val)
+                    preds.append(val)
 
             for kw, val in res["metrics"].items():
                 if val is None:
@@ -271,6 +279,7 @@ class AttackEval:
         unique, counts = np.unique(flips["2"], return_counts=True)
         print(f"2 -> Labels {unique}:{counts}")
 
+        labels = (preds, gt)
         summary = {}
         summary["Total Attacked Instances"] = total_inst
         summary["Successful Instances"] = success_inst
@@ -285,7 +294,7 @@ class AttackEval:
         
         if visualize:
             result_visualizer(summary, sys.stdout.write)
-        return summary
+        return summary, labels
     
     ## TODO generate adversarial samples
     
