@@ -1,3 +1,4 @@
+import pickle
 import sys
 from typing import Any, Dict, Generator, Iterable, List, Optional, Union
 import logging
@@ -180,6 +181,7 @@ class AttackEval:
         flips["0"] = []
         flips["1"] = []
         flips["2"] = []
+        samples = []
 
         # Begin for
         for i, res in enumerate(result_iterator):
@@ -236,9 +238,10 @@ class AttackEval:
                         visualizer(i + 1, x_orig, y_orig, x_adv, y_adv, info, sys.stdout.write, self.tokenizer)
 
                 if y_adv is not None:
-                    key = np.argmax(y_adv)
-                    val = np.argmax(y_orig)
-                    flips[str(key)].append(val)
+                    fromLabel = np.argmax(y_orig)
+                    toLabel = np.argmax(y_adv)
+                    flips[str(fromLabel)].append(toLabel)
+                    samples.append((fromLabel, toLabel, x_orig, x_adv))
                 else:
                     val = np.argmax(y_orig)
                     flips["ok"].append(val)
@@ -254,6 +257,11 @@ class AttackEval:
                 total_result[kw] += float(val)
         # End for
         # Get unique and total valipes from flips
+        # dump samples as pickle
+        with open("samples.pkl", "wb") as f:
+            pickle.dump(samples, f)
+            
+
         unique, counts = np.unique(flips["ok"], return_counts=True)
         print(f"ok: {unique}:{counts}")
         unique, counts = np.unique(flips["0"], return_counts=True)
