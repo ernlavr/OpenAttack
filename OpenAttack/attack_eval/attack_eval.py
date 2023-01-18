@@ -9,6 +9,7 @@ from ..text_process.tokenizer import Tokenizer, get_default_tokenizer
 from ..victim.base import Victim
 from ..attackers.base import Attacker
 from ..metric import AttackMetric, MetricSelector
+import numpy as np
 
 import multiprocessing as mp
 
@@ -174,6 +175,11 @@ class AttackEval:
         total_result_cnt = {}
         total_inst = 0
         success_inst = 0
+        flips = {}
+        flips["ok"] = []
+        flips["0"] = []
+        flips["1"] = []
+        flips["2"] = []
 
         # Begin for
         for i, res in enumerate(result_iterator):
@@ -228,6 +234,15 @@ class AttackEval:
                         visualizer(i + 1, x_orig, y_orig, x_adv, y_adv, info, tqdm_writer, self.tokenizer)
                     else:
                         visualizer(i + 1, x_orig, y_orig, x_adv, y_adv, info, sys.stdout.write, self.tokenizer)
+
+                if y_adv is not None:
+                    key = np.argmax(y_adv)
+                    val = np.argmax(y_orig)
+                    flips[str(key)].append(val)
+                else:
+                    val = np.argmax(y_orig)
+                    flips["ok"].append(val)
+
             for kw, val in res["metrics"].items():
                 if val is None:
                     continue
@@ -238,6 +253,15 @@ class AttackEval:
                 total_result_cnt[kw] += 1
                 total_result[kw] += float(val)
         # End for
+        # Get unique and total valipes from flips
+        unique, counts = np.unique(flips["ok"], return_counts=True)
+        print(f"ok: {unique}:{counts}")
+        unique, counts = np.unique(flips["0"], return_counts=True)
+        print(f"0 -> Labels {unique}:{counts}")
+        unique, counts = np.unique(flips["1"], return_counts=True)
+        print(f"1 -> Labels {unique}:{counts}")
+        unique, counts = np.unique(flips["2"], return_counts=True)
+        print(f"2 -> Labels {unique}:{counts}")
 
         summary = {}
         summary["Total Attacked Instances"] = total_inst
